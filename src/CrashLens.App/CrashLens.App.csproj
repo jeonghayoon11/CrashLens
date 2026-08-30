@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWinUI>true</UseWinUI>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsPackageType>None</WindowsPackageType>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <PublishSingleFile>true</PublishSingleFile>
+  </PropertyGroup>
+  <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" /><PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="..\CrashLens.Core\CrashLens.Core.csproj" /><ProjectReference Include="..\CrashLens.Infrastructure\CrashLens.Infrastructure.csproj" /></ItemGroup>
+</Project>

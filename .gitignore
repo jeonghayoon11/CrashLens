@@ -1,0 +1,14 @@
+# Build output
+**/bin/
+**/obj/
+
+# Local NuGet cache used for build troubleshooting
+.nuget/
+
+# Visual Studio user files
+.vs/
+*.user
+*.suo
+
+# Publish output
+artifacts/

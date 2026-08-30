@@ -1,0 +1,28 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrashLens.Core", "src\CrashLens.Core\CrashLens.Core.csproj", "{A833B3B9-41B7-4301-B0B8-E6E4BD200001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrashLens.Infrastructure", "src\CrashLens.Infrastructure\CrashLens.Infrastructure.csproj", "{A833B3B9-41B7-4301-B0B8-E6E4BD200002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrashLens.App", "src\CrashLens.App\CrashLens.App.csproj", "{A833B3B9-41B7-4301-B0B8-E6E4BD200003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrashLens.Cli", "src\CrashLens.Cli\CrashLens.Cli.csproj", "{A833B3B9-41B7-4301-B0B8-E6E4BD200004}"
+EndProject
+Global
+ GlobalSection(SolutionConfigurationPlatforms) = preSolution
+  Debug|Any CPU = Debug|Any CPU
+  Release|Any CPU = Release|Any CPU
+ EndGlobalSection
+ GlobalSection(ProjectConfigurationPlatforms) = postSolution
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {A833B3B9-41B7-4301-B0B8-E6E4BD200004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+ EndGlobalSection
+EndGlobal

@@ -1,0 +1,7 @@
+<Application xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CrashLens.App.App">
+ <Application.Resources>
+  <ResourceDictionary><XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+   <SolidColorBrush x:Key="CriticalBrush" Color="#EF5C5C"/><SolidColorBrush x:Key="WarningBrush" Color="#DCA94D"/><SolidColorBrush x:Key="MutedBrush" Color="#A8AFBA"/>
+  </ResourceDictionary>
+ </Application.Resources>
+</Application>
