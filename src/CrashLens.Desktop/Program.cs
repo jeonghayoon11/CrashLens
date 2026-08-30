@@ -3,7 +3,27 @@ using CrashLens.Core;
 using CrashLens.Infrastructure;
 
 ApplicationConfiguration.Initialize();
-Application.Run(new CrashLensForm(Environment.GetCommandLineArgs().Contains("--capture", StringComparer.OrdinalIgnoreCase)));
+var capture = Environment.GetCommandLineArgs().Contains("--capture", StringComparer.OrdinalIgnoreCase);
+var main = new CrashLensForm(capture);
+if (capture) Application.Run(main);
+else { var context = new SplashContext(main); context.Start(); Application.Run(context); }
+
+sealed class SplashContext : ApplicationContext
+{
+    readonly Form main;
+    readonly Form splash = new() { FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.CenterScreen, ClientSize = new Size(440, 260), BackColor = Color.FromArgb(17, 24, 39), ShowInTaskbar = false };
+    public SplashContext(Form main) => this.main = main;
+    protected override void OnMainFormClosed(object? sender, EventArgs e) => ExitThread();
+    public void Start()
+    {
+        splash.Controls.Add(new Label { Text = "CRASHLENS", ForeColor = Color.White, Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true, Location = new Point(32, 45) });
+        splash.Controls.Add(new Label { Text = "Windows crash analysis", ForeColor = Color.FromArgb(160, 190, 215), Font = new Font("Segoe UI", 10), AutoSize = true, Location = new Point(34, 84) });
+        var progress = new ProgressBar { Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30, Location = new Point(34, 175), Width = 372, Height = 4 };
+        splash.Controls.Add(progress); splash.Controls.Add(new Label { Text = "Reading Application Event Log", ForeColor = Color.FromArgb(190, 200, 210), Font = new Font("Segoe UI", 9), AutoSize = true, Location = new Point(34, 198) });
+        splash.Shown += (_, _) => { var timer = new System.Windows.Forms.Timer { Interval = 900 }; timer.Tick += (_, _) => { timer.Stop(); splash.Hide(); MainForm = main; main.FormClosed += OnMainFormClosed; main.Show(); }; timer.Start(); };
+        splash.Show();
+    }
+}
 
 sealed class CrashLensForm : Form
 {

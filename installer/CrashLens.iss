@@ -10,6 +10,7 @@ AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 AppPublisherURL=https://jhynx.com
 AppSupportURL=mailto:contact@jhynx.com
+ShowLanguageDialog=yes
 DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
 LicenseFile=LICENSE.txt
@@ -23,6 +24,10 @@ UninstallDisplayIcon={app}\{#AppExeName}
 
 [Files]
 Source: "..\artifacts\CrashLens-release-final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Icons]
 Name: "{group}\CrashLens"; Filename: "{app}\{#AppExeName}"
