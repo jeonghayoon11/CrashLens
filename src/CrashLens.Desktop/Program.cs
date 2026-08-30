@@ -12,13 +12,13 @@ sealed class CrashLensForm : Form
     readonly TextBox details = new() { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Both, Font = new Font("Consolas", 10), BackColor = Color.FromArgb(30, 31, 34), ForeColor = Color.Gainsboro };
     readonly BindingSource source = new();
     readonly ICrashParser parser = new CrashParser();
-    readonly NotifyIcon tray = new() { Icon = SystemIcons.Error, Text = "CrashLens is monitoring crashes", Visible = true };
+    readonly NotifyIcon tray = new() { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Error, Text = "CrashLens is monitoring crashes", Visible = true };
     EventLogWatcher? watcher;
 
     public CrashLensForm(bool capture)
     {
         this.capture = capture;
-        Text = "CrashLens - Windows Crash Analysis"; Width = 1280; Height = 780; BackColor = Color.FromArgb(30, 31, 34); ForeColor = Color.White;
+        Text = "CrashLens - Windows Crash Analysis"; Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); Width = 1280; Height = 780; BackColor = Color.FromArgb(30, 31, 34); ForeColor = Color.White;
         var tool = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, BackColor = Color.FromArgb(43, 45, 48), ForeColor = Color.White };
         var refresh = new ToolStripButton("Refresh") { ForeColor = Color.White }; refresh.Click += async (_, _) => await LoadEvents(); tool.Items.Add(refresh); tool.Items.Add(new ToolStripLabel("Application Event Log - Last 24 hours") { ForeColor = Color.Silver });
         foreach (var (title, field, width) in new[] { ("Severity", nameof(CrashEvent.Severity), 80), ("Application", nameof(CrashEvent.ApplicationName), 220), ("Event", nameof(CrashEvent.Type), 150), ("Exception", nameof(CrashEvent.ExceptionCode), 120) }) grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = title, DataPropertyName = field, Width = width });

@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CrashLens">
-  <rect width="64" height="64" rx="8" fill="#1E1F22"/>
-  <path d="M14 14h22l-7 7H21v22l-7 7V14Z" fill="#007ACC"/>
-  <path d="M50 50H28l7-7h8V21l7-7v36Z" fill="#33B5E5"/>
-  <path d="M25 32h14M32 25v14" stroke="#FFF" stroke-width="3" stroke-linecap="square"/>
-  <rect x="29" y="29" width="6" height="6" fill="#FFF"/>
+  <rect width="64" height="64" fill="#111827"/>
+  <path fill="#0B5CAD" d="M12 12h24v8H20v24h-8z"/>
+  <path fill="#1677C8" d="M28 20h16v8H36v16h-8z"/>
+  <path fill="#45B3E7" d="M36 28h16v24H44V36h-8z"/>
+  <path fill="#D9E9F4" d="M24 28h8v8h-8zm8 8h8v8h-8z"/>
+  <path fill="#F5F9FC" d="M24 44h8v8h-8z"/>
 </svg>

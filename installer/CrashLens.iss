@@ -1,6 +1,6 @@
 #define AppName "CrashLens"
 #define AppVersion "0.1.0"
-#define AppPublisher "CrashLens contributors"
+#define AppPublisher "Jeong Hayoon"
 #define AppExeName "CrashLens.exe"
 
 [Setup]
@@ -8,6 +8,8 @@ AppId={{3D16D931-9C59-4293-8497-AE7D8EB089F9}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
+AppPublisherURL=https://jhynx.com
+AppSupportURL=mailto:contact@jhynx.com
 DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
 LicenseFile=LICENSE.txt
