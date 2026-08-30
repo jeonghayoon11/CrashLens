@@ -102,10 +102,15 @@ sealed class CrashLensForm : Form
     {
         if (balloonAction != BalloonAction.InstallUpdate || availableUpdate is null) { OpenWindow(); return; }
         if (MessageBox.Show($"Download and install CrashLens {availableUpdate.Version} now?", "CrashLens update", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+        using var progressWindow = new UpdateProgressForm(availableUpdate.Version);
+        progressWindow.Show(this);
         try
         {
-            var installer = await updateService.DownloadInstallerAsync(availableUpdate);
-            Process.Start(new ProcessStartInfo { FileName = installer, UseShellExecute = true });
+            var progress = new Progress<int>(progressWindow.SetProgress);
+            var installer = await updateService.DownloadInstallerAsync(availableUpdate, progress);
+            progressWindow.SetInstalling();
+            await Task.Delay(300);
+            Process.Start(new ProcessStartInfo { FileName = installer, Arguments = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS", UseShellExecute = true });
             tray.Visible = false;
             Application.Exit();
         }
@@ -114,4 +119,42 @@ sealed class CrashLensForm : Form
     void ShowSelected() { if (grid.CurrentRow?.DataBoundItem is CrashEvent c) details.Text = $"APPLICATION\r\n{c.ApplicationName}\r\n{c.ExecutablePath}\r\n\r\nEXCEPTION\r\n{c.ExceptionDisplay}\r\n\r\nFAULTING MODULE\r\n{c.FaultingModule}\r\n\r\nRAW EVENT\r\n{c.RawMessage}\r\n\r\nXML\r\n{c.RawXml}"; }
     async Task LoadEvents() { try { source.DataSource = await new WindowsEventLogReader(parser).ReadAsync(DateTimeOffset.Now.AddDays(-1)); } catch (Exception ex) { details.Text = ex.Message; } }
     protected override void Dispose(bool disposing) { if (disposing) { watcher?.Dispose(); tray.Dispose(); } base.Dispose(disposing); }
+}
+
+sealed class UpdateProgressForm : Form
+{
+    readonly Label status = new() { Dock = DockStyle.Top, Height = 30, TextAlign = ContentAlignment.MiddleLeft };
+    readonly ProgressBar progress = new() { Dock = DockStyle.Top, Height = 22, Minimum = 0, Maximum = 100 };
+    readonly Label percentage = new() { Dock = DockStyle.Top, Height = 28, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
+
+    public UpdateProgressForm(Version version)
+    {
+        Text = "Updating CrashLens";
+        ClientSize = new Size(390, 125);
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        StartPosition = FormStartPosition.CenterParent;
+        ControlBox = false;
+        MaximizeBox = false;
+        MinimizeBox = false;
+        Padding = new Padding(20);
+        status.Text = $"Downloading CrashLens {version}...";
+        percentage.Text = "0%";
+        Controls.Add(percentage);
+        Controls.Add(progress);
+        Controls.Add(status);
+    }
+
+    public void SetProgress(int value)
+    {
+        value = Math.Clamp(value, 0, 100);
+        progress.Value = value;
+        percentage.Text = $"{value}%";
+    }
+
+    public void SetInstalling()
+    {
+        progress.Value = 100;
+        status.Text = "Applying update...";
+        percentage.Text = "100%";
+    }
 }
