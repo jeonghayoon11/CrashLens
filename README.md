@@ -6,7 +6,9 @@ CrashLens는 복잡한 이벤트 뷰어 대신 최근 오류를 한 화면에 �
 
 ## 다운로드
 
-첫 공개 버전을 준비하고 있습니다. 배포가 시작되면 [Releases](https://github.com/jeonghayoon11/CrashLens/releases) 페이지에서 설치 파일 또는 실행 파일을 내려받을 수 있습니다.
+**[Windows 설치 파일 다운로드](https://github.com/jeonghayoon11/CrashLens/releases/download/v0.1.0/CrashLens-Setup-0.1.0.exe)**
+
+다운로드한 `CrashLens-Setup-0.1.0.exe`를 실행한 뒤 이용약관에 동의하고 설치 경로를 선택하세요. 설치 과정에서 바탕화면 바로가기를 만들 수 있으며, 설치 후 시작 메뉴에서 CrashLens를 실행할 수 있습니다.
 
 ## 실제 프로그램 화면
 

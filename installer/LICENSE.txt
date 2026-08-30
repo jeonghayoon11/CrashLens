@@ -1,0 +1,9 @@
+CrashLens End User License Agreement
+
+Copyright (c) 2026 CrashLens contributors
+
+By installing or using CrashLens, you agree that the software is provided "AS IS", without warranty of any kind. CrashLens reads crash records from the local Windows Application Event Log. Its analysis is informational only and does not establish the cause of a failure.
+
+You are responsible for reviewing any report before sharing it. Crash records can contain local paths, application names, and other information from your computer.
+
+CrashLens is open-source software released under the MIT License. A copy of that license is included with the source code.
