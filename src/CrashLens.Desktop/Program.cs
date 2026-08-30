@@ -1,9 +1,11 @@
 using System.Diagnostics.Eventing.Reader;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using CrashLens.Core;
 using CrashLens.Infrastructure;
 using CrashLens.Desktop;
 
+NativeShell.SetCurrentProcessExplicitAppUserModelID($"com.jhynx.CrashLens.{AppMetadata.DisplayVersion}");
 ApplicationConfiguration.Initialize();
 var capture = Environment.GetCommandLineArgs().Contains("--capture", StringComparer.OrdinalIgnoreCase);
 var main = new CrashLensForm(capture);
@@ -140,7 +142,16 @@ sealed class CrashLensForm : Form
     }
     static void ShowAbout() => MessageBox.Show($"CrashLens\r\nVersion {AppMetadata.DisplayVersion}\r\n\r\nWindows crash analysis utility\r\n\r\nDeveloper: Jeong Hayoon\r\nWebsite: https://jhynx.com\r\nGitHub: https://github.com/jeonghayoon11", "About CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
     void ShowSelected() { if (grid.CurrentRow?.DataBoundItem is CrashEvent c) details.Text = $"APPLICATION\r\n{c.ApplicationName}\r\n{c.ExecutablePath}\r\n\r\nEXCEPTION\r\n{c.ExceptionDisplay}\r\n\r\nFAULTING MODULE\r\n{c.FaultingModule}\r\n\r\nRAW EVENT\r\n{c.RawMessage}\r\n\r\nXML\r\n{c.RawXml}"; }
-    async Task LoadEvents() { try { source.DataSource = await new WindowsEventLogReader(parser).ReadAsync(DateTimeOffset.Now.AddDays(-1)); } catch (Exception ex) { details.Text = ex.Message; } }
+    async Task LoadEvents()
+    {
+        try
+        {
+            var events = await new WindowsEventLogReader(parser).ReadAsync(DateTimeOffset.Now.AddDays(-1));
+            source.DataSource = events;
+            if (events.Count == 0) details.Text = "NO RECENT CRASHES\r\n\r\nNo Application Error, Windows Error Reporting, or Application Hang events were recorded in the last 24 hours.";
+        }
+        catch (Exception ex) { details.Text = ex.Message; }
+    }
     protected override void Dispose(bool disposing) { if (disposing) { updateTimer.Dispose(); watcher?.Dispose(); tray.Dispose(); trayIcon.Dispose(); windowIcon.Dispose(); } base.Dispose(disposing); }
 }
 
@@ -148,6 +159,12 @@ static class AppMetadata
 {
     public static Version Version => typeof(CrashLensForm).Assembly.GetName().Version ?? new Version(0, 1, 0);
     public static string DisplayVersion => Version.ToString(3);
+}
+
+static class NativeShell
+{
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int SetCurrentProcessExplicitAppUserModelID(string appID);
 }
 
 sealed class UpdateProgressForm : Form

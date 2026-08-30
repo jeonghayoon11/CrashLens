@@ -1,5 +1,5 @@
 #define AppName "CrashLens"
-#define AppVersion "0.1.6"
+#define AppVersion "0.1.7"
 #define AppPublisher "Jeong Hayoon"
 #define AppExeName "CrashLens.exe"
 
@@ -15,7 +15,7 @@ DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
 LicenseFile=LICENSE.txt
 OutputDir=..\artifacts\installer
-OutputBaseFilename=CrashLens-Setup-0.1.6
+OutputBaseFilename=CrashLens-Setup-0.1.7
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -25,15 +25,15 @@ CloseApplications=yes
 
 [Files]
 Source: "..\artifacts\CrashLens-release-final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\docs\images\crashlens.ico"; DestDir: "{app}"; DestName: "CrashLens-0.1.6.ico"; Flags: ignoreversion
+Source: "..\docs\images\crashlens.ico"; DestDir: "{app}"; DestName: "CrashLens-0.1.7.ico"; Flags: ignoreversion
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Icons]
-Name: "{group}\CrashLens"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\CrashLens-0.1.6.ico"
-Name: "{autodesktop}\CrashLens"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\CrashLens-0.1.6.ico"
+Name: "{group}\CrashLens"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\CrashLens-0.1.7.ico"
+Name: "{autodesktop}\CrashLens"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\CrashLens-0.1.7.ico"
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Launch CrashLens"; Flags: nowait postinstall skipifsilent

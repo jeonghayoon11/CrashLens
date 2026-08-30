@@ -31,6 +31,13 @@ public sealed class CrashParser : ICrashParser
             appPath = First(appPath, GetPositionalXmlField(xml, 10));
             processText = First(processText, GetPositionalXmlField(xml, 8));
         }
+        else if (eventId == 1001)
+        {
+            // Windows Error Reporting stores the fault details as P1/P4/P8 in its problem signature.
+            app = First(app, Get("P1"));
+            module = First(module, Get("P4"));
+            exception = First(exception, NormalizeExceptionCode(Get("P8")));
+        }
 
         return new CrashEvent(time, eventId == 1002 ? CrashSeverity.Warning : CrashSeverity.Error, type.Value, eventId,
             string.IsNullOrEmpty(app) ? "Unknown application" : app, NullIfEmpty(appPath),
