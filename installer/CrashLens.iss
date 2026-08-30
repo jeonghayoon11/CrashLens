@@ -1,5 +1,5 @@
 #define AppName "CrashLens"
-#define AppVersion "0.1.1"
+#define AppVersion "0.1.2"
 #define AppPublisher "Jeong Hayoon"
 #define AppExeName "CrashLens.exe"
 
@@ -15,7 +15,7 @@ DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
 LicenseFile=LICENSE.txt
 OutputDir=..\artifacts\installer
-OutputBaseFilename=CrashLens-Setup-0.1.1
+OutputBaseFilename=CrashLens-Setup-0.1.2
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
