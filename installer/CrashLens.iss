@@ -1,5 +1,5 @@
 #define AppName "CrashLens"
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 #define AppPublisher "Jeong Hayoon"
 #define AppExeName "CrashLens.exe"
 
@@ -15,12 +15,13 @@ DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
 LicenseFile=LICENSE.txt
 OutputDir=..\artifacts\installer
-OutputBaseFilename=CrashLens-Setup-0.1.0
+OutputBaseFilename=CrashLens-Setup-0.1.1
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
 UninstallDisplayIcon={app}\{#AppExeName}
+CloseApplications=yes
 
 [Files]
 Source: "..\artifacts\CrashLens-release-final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -31,10 +32,15 @@ Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Icons]
 Name: "{group}\CrashLens"; Filename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\CrashLens"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
-
-[Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
+Name: "{autodesktop}\CrashLens"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Launch CrashLens"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+; The main window closes to the tray, so explicitly stop the monitor before files are removed.
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM ""{#AppExeName}"""; Flags: runhidden waituntilterminated
+
+[UninstallDelete]
+; Remove residual runtime files as well as the files tracked by the installer.
+Type: filesandordirs; Name: "{app}"
