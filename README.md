@@ -2,14 +2,11 @@
 
 > Windows 애플리케이션 충돌 로그를 빠르게 확인하는 데스크톱 분석 도구
 
-[![Windows 빌드](https://github.com/jeonghayoon11/CrashLens/actions/workflows/release.yml/badge.svg)](https://github.com/jeonghayoon11/CrashLens/actions/workflows/release.yml)
-[![최신 릴리스](https://img.shields.io/github/v/release/jeonghayoon11/CrashLens?label=%EC%B5%9C%EC%8B%A0%20%EB%B2%84%EC%A0%84)](https://github.com/jeonghayoon11/CrashLens/releases/latest)
-
 ## 다운로드
 
 **[최신 버전 다운로드 — GitHub Releases](https://github.com/jeonghayoon11/CrashLens/releases)**
 
-릴리스가 게시되면 위 페이지에서 `CrashLens.App.exe`를 내려받아 실행하세요. 일반 사용자는 Visual Studio나 .NET 런타임을 설치할 필요가 없습니다.
+첫 릴리스를 준비 중입니다. 릴리스가 게시되면 위 페이지에서 `CrashLens.App.exe`를 내려받아 실행하세요. 일반 사용자는 Visual Studio나 .NET 런타임을 설치할 필요가 없습니다.
 
 > Windows SmartScreen 경고가 표시될 수 있습니다. 코드 서명이 아직 적용되지 않은 초기 공개 버전에서는 `추가 정보` → `실행`을 선택해야 할 수 있습니다.
 
