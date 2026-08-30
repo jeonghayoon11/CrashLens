@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>WinExe</OutputType><UseWindowsForms>true</UseWindowsForms><AssemblyName>CrashLens</AssemblyName><Version>0.1.3</Version><ApplicationIcon>..\..\docs\images\crashlens.ico</ApplicationIcon></PropertyGroup>
+  <PropertyGroup><OutputType>WinExe</OutputType><UseWindowsForms>true</UseWindowsForms><AssemblyName>CrashLens</AssemblyName><Version>0.1.4</Version><ApplicationIcon>..\..\docs\images\crashlens.ico</ApplicationIcon></PropertyGroup>
   <ItemGroup><ProjectReference Include="..\CrashLens.Core\CrashLens.Core.csproj" /><ProjectReference Include="..\CrashLens.Infrastructure\CrashLens.Infrastructure.csproj" /></ItemGroup>
 </Project>
