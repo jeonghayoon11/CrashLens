@@ -11,9 +11,10 @@ public sealed class CrashParser : ICrashParser
         string Get(string label) => Regex.Match(message, $@"{Regex.Escape(label)}\s*[:：]\s*([^\r\n]+)", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
         var app = Get("Faulting application name");
         if (string.IsNullOrEmpty(app)) app = Get("Application Name");
+        var processText = Get("Faulting process id").Replace("0x", "", StringComparison.OrdinalIgnoreCase);
         return new CrashEvent(time, eventId == 1002 ? CrashSeverity.Warning : CrashSeverity.Error, type.Value, eventId,
             string.IsNullOrEmpty(app) ? "Unknown application" : app, Get("Faulting application path"),
-            Get("Faulting module name"), Get("Exception code"), int.TryParse(Get("Faulting process id"), System.Globalization.NumberStyles.HexNumber, null, out var pid) ? pid : null, message, xml);
+            Get("Faulting module name"), Get("Exception code"), int.TryParse(processText, System.Globalization.NumberStyles.HexNumber, null, out var pid) ? pid : null, message, xml);
     }
 }
 

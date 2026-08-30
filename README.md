@@ -8,6 +8,20 @@ CrashLens는 복잡한 이벤트 뷰어 대신 최근 오류를 한 화면에 �
 
 첫 공개 버전을 준비하고 있습니다. 배포가 시작되면 [Releases](https://github.com/jeonghayoon11/CrashLens/releases) 페이지에서 설치 파일 또는 실행 파일을 내려받을 수 있습니다.
 
+## 화면
+
+![CrashLens main window](docs/images/crashlens-main.png)
+
+## 사용 방법
+
+1. [Releases](https://github.com/jeonghayoon11/CrashLens/releases)에서 `CrashLens.Desktop.exe`를 다운로드해 실행합니다.
+2. 프로그램을 열면 최근 24시간의 Application 로그가 목록에 표시됩니다. 상단의 **Refresh**를 누르면 최신 기록을 다시 읽습니다.
+3. 목록에서 오류 항목을 클릭하면 아래에서 오류 코드, 관련 모듈, 원본 이벤트, XML을 확인할 수 있습니다.
+4. 창을 닫아도 CrashLens는 작업 표시줄 알림 영역에서 계속 실행됩니다. 새 프로그램 충돌이 기록되면 빨간 오류 알림이 나타납니다.
+5. 알림을 클릭하면 CrashLens가 열리고 최근 충돌 목록이 갱신됩니다. 완전히 종료하려면 트레이 아이콘을 오른쪽 클릭한 뒤 **Exit**를 선택합니다.
+
+> 알림은 CrashLens가 실행 중일 때만 표시됩니다. 충돌의 원인을 확정하는 것이 아니라 Windows가 남긴 오류 기록을 정리해 보여 줍니다.
+
 ## 이런 경우에 사용하세요
 
 - 프로그램이 갑자기 종료됐는데 원인을 확인하고 싶을 때

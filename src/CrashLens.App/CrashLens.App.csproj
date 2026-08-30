@@ -10,6 +10,6 @@
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
-  <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" /><PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" /><PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" /></ItemGroup>
   <ItemGroup><ProjectReference Include="..\CrashLens.Core\CrashLens.Core.csproj" /><ProjectReference Include="..\CrashLens.Infrastructure\CrashLens.Infrastructure.csproj" /></ItemGroup>
 </Project>
