@@ -18,8 +18,8 @@ sealed class SplashContext : ApplicationContext
     protected override void OnMainFormClosed(object? sender, EventArgs e) => ExitThread();
     public void Start()
     {
-        splash.Controls.Add(new Label { Text = "CRASHLENS", ForeColor = Color.White, Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true, Location = new Point(32, 45) });
-        splash.Controls.Add(new Label { Text = "Windows crash analysis", ForeColor = Color.FromArgb(160, 190, 215), Font = new Font("Segoe UI", 10), AutoSize = true, Location = new Point(34, 84) });
+        splash.Controls.Add(new Label { Text = "CRASHLENS", ForeColor = Color.White, Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true, Location = new Point(32, 36) });
+        splash.Controls.Add(new Label { Text = "Windows crash analysis", ForeColor = Color.FromArgb(160, 190, 215), Font = new Font("Segoe UI", 10), AutoSize = true, Location = new Point(34, 104) });
         var progress = new ProgressBar { Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30, Location = new Point(34, 175), Width = 372, Height = 4 };
         splash.Controls.Add(progress); splash.Controls.Add(new Label { Text = "Reading Application Event Log", ForeColor = Color.FromArgb(190, 200, 210), Font = new Font("Segoe UI", 9), AutoSize = true, Location = new Point(34, 198) });
         splash.Shown += (_, _) => { var timer = new System.Windows.Forms.Timer { Interval = 900 }; timer.Tick += (_, _) => { timer.Stop(); splash.Hide(); MainForm = main; main.FormClosed += OnMainFormClosed; main.Show(); }; timer.Start(); };
@@ -34,7 +34,9 @@ sealed class CrashLensForm : Form
     readonly TextBox details = new() { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Both, Font = new Font("Consolas", 10), BackColor = Color.FromArgb(30, 31, 34), ForeColor = Color.Gainsboro };
     readonly BindingSource source = new();
     readonly ICrashParser parser = new CrashParser();
-    readonly NotifyIcon tray = new() { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Error, Text = "CrashLens is monitoring crashes", Visible = true };
+    readonly Icon windowIcon = LoadIcon(32);
+    readonly Icon trayIcon = LoadIcon(16);
+    readonly NotifyIcon tray;
     readonly UpdateService updateService = new();
     ReleaseUpdate? availableUpdate;
     BalloonAction balloonAction;
@@ -44,7 +46,8 @@ sealed class CrashLensForm : Form
     public CrashLensForm(bool capture)
     {
         this.capture = capture;
-        Text = "CrashLens - Windows Crash Analysis"; Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); Width = 1280; Height = 780; BackColor = Color.FromArgb(30, 31, 34); ForeColor = Color.White;
+        tray = new NotifyIcon { Icon = trayIcon, Text = "CrashLens is monitoring crashes", Visible = true };
+        Text = "CrashLens - Windows Crash Analysis"; Icon = windowIcon; Width = 1280; Height = 780; BackColor = Color.FromArgb(30, 31, 34); ForeColor = Color.White;
         var tool = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, BackColor = Color.FromArgb(43, 45, 48), ForeColor = Color.White };
         var refresh = new ToolStripButton("Refresh") { ForeColor = Color.White }; refresh.Click += async (_, _) => await LoadEvents(); tool.Items.Add(refresh); tool.Items.Add(new ToolStripLabel("Application Event Log - Last 24 hours") { ForeColor = Color.Silver });
         foreach (var (title, field, width) in new[] { ("Severity", nameof(CrashEvent.Severity), 80), ("Application", nameof(CrashEvent.ApplicationName), 220), ("Event", nameof(CrashEvent.Type), 150), ("Exception", nameof(CrashEvent.ExceptionCode), 120) }) grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = title, DataPropertyName = field, Width = width });
@@ -83,6 +86,11 @@ sealed class CrashLensForm : Form
     }
 
     void OpenWindow() { Show(); WindowState = FormWindowState.Normal; Activate(); }
+    static Icon LoadIcon(int size)
+    {
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "CrashLens.ico");
+        return File.Exists(iconPath) ? new Icon(iconPath, new Size(size, size)) : Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
+    }
     async Task CheckForUpdatesAsync(bool showNoUpdateMessage)
     {
         try
@@ -118,7 +126,7 @@ sealed class CrashLensForm : Form
     }
     void ShowSelected() { if (grid.CurrentRow?.DataBoundItem is CrashEvent c) details.Text = $"APPLICATION\r\n{c.ApplicationName}\r\n{c.ExecutablePath}\r\n\r\nEXCEPTION\r\n{c.ExceptionDisplay}\r\n\r\nFAULTING MODULE\r\n{c.FaultingModule}\r\n\r\nRAW EVENT\r\n{c.RawMessage}\r\n\r\nXML\r\n{c.RawXml}"; }
     async Task LoadEvents() { try { source.DataSource = await new WindowsEventLogReader(parser).ReadAsync(DateTimeOffset.Now.AddDays(-1)); } catch (Exception ex) { details.Text = ex.Message; } }
-    protected override void Dispose(bool disposing) { if (disposing) { watcher?.Dispose(); tray.Dispose(); } base.Dispose(disposing); }
+    protected override void Dispose(bool disposing) { if (disposing) { watcher?.Dispose(); tray.Dispose(); trayIcon.Dispose(); windowIcon.Dispose(); } base.Dispose(disposing); }
 }
 
 sealed class UpdateProgressForm : Form
