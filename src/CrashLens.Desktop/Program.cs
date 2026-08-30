@@ -20,6 +20,7 @@ sealed class SplashContext : ApplicationContext
     {
         splash.Controls.Add(new Label { Text = "CRASHLENS", ForeColor = Color.White, Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true, Location = new Point(32, 36) });
         splash.Controls.Add(new Label { Text = "Windows crash analysis", ForeColor = Color.FromArgb(160, 190, 215), Font = new Font("Segoe UI", 10), AutoSize = true, Location = new Point(34, 104) });
+        splash.Controls.Add(new Label { Text = $"Version {AppMetadata.DisplayVersion}", ForeColor = Color.FromArgb(130, 160, 190), Font = new Font("Segoe UI", 9), AutoSize = true, Location = new Point(34, 132) });
         var progress = new ProgressBar { Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30, Location = new Point(34, 175), Width = 372, Height = 4 };
         splash.Controls.Add(progress); splash.Controls.Add(new Label { Text = "Reading Application Event Log", ForeColor = Color.FromArgb(190, 200, 210), Font = new Font("Segoe UI", 9), AutoSize = true, Location = new Point(34, 198) });
         splash.Shown += (_, _) => { var timer = new System.Windows.Forms.Timer { Interval = 900 }; timer.Tick += (_, _) => { timer.Stop(); splash.Hide(); MainForm = main; main.FormClosed += OnMainFormClosed; main.Show(); }; timer.Start(); };
@@ -38,8 +39,10 @@ sealed class CrashLensForm : Form
     readonly Icon trayIcon = LoadIcon(16);
     readonly NotifyIcon tray;
     readonly UpdateService updateService = new();
+    readonly System.Windows.Forms.Timer updateTimer = new() { Interval = 6 * 60 * 60 * 1000 };
     ReleaseUpdate? availableUpdate;
     BalloonAction balloonAction;
+    bool checkingForUpdate;
     EventLogWatcher? watcher;
     enum BalloonAction { OpenWindow, InstallUpdate }
 
@@ -55,7 +58,9 @@ sealed class CrashLensForm : Form
         grid.DataSource = source; grid.SelectionChanged += (_, _) => ShowSelected();
         var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 390, BackColor = Color.FromArgb(63, 65, 69) }; split.Panel1.Controls.Add(grid); split.Panel2.Controls.Add(details); Controls.Add(split); Controls.Add(tool); tool.Dock = DockStyle.Top;
         var menu = new ContextMenuStrip(); menu.Items.Add("Open CrashLens", null, (_, _) => OpenWindow()); menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesAsync(true)); menu.Items.Add("Exit", null, (_, _) => { tray.Visible = false; Application.Exit(); }); tray.ContextMenuStrip = menu; tray.BalloonTipClicked += async (_, _) => await HandleBalloonClickAsync(); tray.DoubleClick += (_, _) => OpenWindow();
-        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); _ = CheckForUpdatesAsync(false); };
+        var help = new ToolStripDropDownButton("Help"); help.DropDownItems.Add("About CrashLens", null, (_, _) => ShowAbout()); tool.Items.Add(help);
+        updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(false);
+        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); await CheckForUpdatesAsync(false, true); updateTimer.Start(); };
         FormClosing += (_, e) => { if (e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; Hide(); tray.ShowBalloonTip(2500, "CrashLens", "CrashLens is still monitoring application crashes.", ToolTipIcon.Info); } };
     }
 
@@ -91,25 +96,34 @@ sealed class CrashLensForm : Form
         var iconPath = Path.Combine(AppContext.BaseDirectory, "CrashLens.ico");
         return File.Exists(iconPath) ? new Icon(iconPath, new Size(size, size)) : Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
     }
-    async Task CheckForUpdatesAsync(bool showNoUpdateMessage)
+    async Task CheckForUpdatesAsync(bool showNoUpdateMessage, bool showUpdatePopup = false)
     {
+        if (checkingForUpdate) return;
+        checkingForUpdate = true;
         try
         {
-            var current = typeof(CrashLensForm).Assembly.GetName().Version ?? new Version(0, 1, 0);
+            var current = AppMetadata.Version;
             availableUpdate = await updateService.CheckAsync(current);
             if (availableUpdate is not null)
             {
                 balloonAction = BalloonAction.InstallUpdate;
                 tray.ShowBalloonTip(10000, "CrashLens update available", $"Version {availableUpdate.Version} is ready. Click this notification to install it.", ToolTipIcon.Info);
+                if (showUpdatePopup && MessageBox.Show($"CrashLens {availableUpdate.Version} is available. Update now?", "CrashLens update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) await BeginUpdateAsync();
             }
             else if (showNoUpdateMessage) MessageBox.Show("CrashLens is up to date.", "CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        catch when (showNoUpdateMessage) { MessageBox.Show("Could not check for updates. Check your internet connection and try again.", "CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        catch { if (showNoUpdateMessage) MessageBox.Show("Could not check for updates. Check your internet connection and try again.", "CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+        finally { checkingForUpdate = false; }
     }
     async Task HandleBalloonClickAsync()
     {
         if (balloonAction != BalloonAction.InstallUpdate || availableUpdate is null) { OpenWindow(); return; }
         if (MessageBox.Show($"Download and install CrashLens {availableUpdate.Version} now?", "CrashLens update", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+        await BeginUpdateAsync();
+    }
+    async Task BeginUpdateAsync()
+    {
+        if (availableUpdate is null) return;
         using var progressWindow = new UpdateProgressForm(availableUpdate.Version);
         progressWindow.Show(this);
         try
@@ -124,9 +138,16 @@ sealed class CrashLensForm : Form
         }
         catch { MessageBox.Show("The update could not be downloaded. Please try again later.", "CrashLens update", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
+    static void ShowAbout() => MessageBox.Show($"CrashLens\r\nVersion {AppMetadata.DisplayVersion}\r\n\r\nWindows crash analysis utility\r\n\r\nDeveloper: Jeong Hayoon\r\nWebsite: https://jhynx.com\r\nGitHub: https://github.com/jeonghayoon11", "About CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
     void ShowSelected() { if (grid.CurrentRow?.DataBoundItem is CrashEvent c) details.Text = $"APPLICATION\r\n{c.ApplicationName}\r\n{c.ExecutablePath}\r\n\r\nEXCEPTION\r\n{c.ExceptionDisplay}\r\n\r\nFAULTING MODULE\r\n{c.FaultingModule}\r\n\r\nRAW EVENT\r\n{c.RawMessage}\r\n\r\nXML\r\n{c.RawXml}"; }
     async Task LoadEvents() { try { source.DataSource = await new WindowsEventLogReader(parser).ReadAsync(DateTimeOffset.Now.AddDays(-1)); } catch (Exception ex) { details.Text = ex.Message; } }
-    protected override void Dispose(bool disposing) { if (disposing) { watcher?.Dispose(); tray.Dispose(); trayIcon.Dispose(); windowIcon.Dispose(); } base.Dispose(disposing); }
+    protected override void Dispose(bool disposing) { if (disposing) { updateTimer.Dispose(); watcher?.Dispose(); tray.Dispose(); trayIcon.Dispose(); windowIcon.Dispose(); } base.Dispose(disposing); }
+}
+
+static class AppMetadata
+{
+    public static Version Version => typeof(CrashLensForm).Assembly.GetName().Version ?? new Version(0, 1, 0);
+    public static string DisplayVersion => Version.ToString(3);
 }
 
 sealed class UpdateProgressForm : Form
