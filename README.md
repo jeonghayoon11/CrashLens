@@ -1,7 +1,5 @@
 # CrashLens
 
-![CrashLens logo](docs/images/crashlens-mark.svg)
-
 Windows에서 발생한 프로그램 충돌과 멈춤 현상을 빠르게 확인하는 데스크톱 분석 도구입니다.
 
 CrashLens는 복잡한 이벤트 뷰어 대신 최근 오류를 한 화면에 정리해 보여 줍니다. 어떤 프로그램이 언제 중단됐는지, 오류 모듈과 예외 코드는 무엇인지, 원본 이벤트에는 무엇이 기록됐는지 확인할 수 있습니다.
