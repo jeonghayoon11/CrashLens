@@ -8,9 +8,9 @@ CrashLens는 복잡한 이벤트 뷰어 대신 최근 오류를 한 화면에 �
 
 첫 공개 버전을 준비하고 있습니다. 배포가 시작되면 [Releases](https://github.com/jeonghayoon11/CrashLens/releases) 페이지에서 설치 파일 또는 실행 파일을 내려받을 수 있습니다.
 
-## 화면
+## 실제 프로그램 화면
 
-![CrashLens main window](docs/images/crashlens-main.png)
+![실행 중인 CrashLens 창](docs/images/crashlens-main.png)
 
 ## 사용 방법
 
