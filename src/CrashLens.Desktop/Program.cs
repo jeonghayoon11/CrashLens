@@ -66,10 +66,11 @@ sealed class CrashLensForm : Form
         grid.DataSource = source; grid.SelectionChanged += (_, _) => ShowSelected();
         var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 390, BackColor = Color.FromArgb(63, 65, 69) }; split.Panel1.Controls.Add(grid); split.Panel2.Controls.Add(details); Controls.Add(split); Controls.Add(tool); tool.Dock = DockStyle.Top;
         var menu = new ContextMenuStrip(); menu.Items.Add("Open CrashLens", null, (_, _) => OpenWindow()); menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesAsync(true)); menu.Items.Add("Exit", null, (_, _) => { tray.Visible = false; Application.Exit(); }); tray.ContextMenuStrip = menu; tray.BalloonTipClicked += async (_, _) => await HandleBalloonClickAsync(); tray.DoubleClick += (_, _) => OpenWindow();
+        var settings = new ToolStripDropDownButton("Settings"); settings.DropDownItems.Add("Notifications: Korean", null, (_, _) => SetNotificationLanguage("korean")); settings.DropDownItems.Add("Notifications: English", null, (_, _) => SetNotificationLanguage("english")); tool.Items.Add(settings);
         var help = new ToolStripDropDownButton("Help"); help.DropDownItems.Add("About CrashLens", null, (_, _) => ShowAbout()); tool.Items.Add(help);
         updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(false);
-        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); if (startInBackground) ShowBackgroundStartedNotification(); await CheckForUpdatesAsync(false, true); updateTimer.Start(); };
-        FormClosing += (_, e) => { if (e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; Hide(); tray.ShowBalloonTip(2500, "CrashLens", "CrashLens is still monitoring application crashes.", ToolTipIcon.Info); } };
+        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); if (startInBackground) BeginInvoke(async () => { await Task.Delay(4000); ShowBackgroundStartedNotification(); }); ShowReleaseNotes(); await CheckForUpdatesAsync(false, !startInBackground); updateTimer.Start(); };
+        FormClosing += (_, e) => { if (e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; Hide(); tray.ShowBalloonTip(2500, "CrashLens", NotificationText("CrashLens is still monitoring application crashes.", "CrashLens가 계속 프로그램 충돌을 모니터링합니다."), ToolTipIcon.Info); } };
     }
 
     void CaptureScreenshot()
@@ -102,9 +103,22 @@ sealed class CrashLensForm : Form
     void ShowBackgroundStartedNotification()
     {
         var selectedLanguage = Registry.CurrentUser.OpenSubKey("Software\\CrashLens")?.GetValue("NotificationLanguage")?.ToString();
-        var korean = selectedLanguage?.Equals("korean", StringComparison.OrdinalIgnoreCase) == true || (string.IsNullOrEmpty(selectedLanguage) && CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("ko", StringComparison.OrdinalIgnoreCase));
         balloonAction = BalloonAction.OpenWindow;
-        tray.ShowBalloonTip(7000, korean ? "CrashLens가 백그라운드에서 실행 중입니다." : "CrashLens is running in the background.", korean ? "알림 영역에서 프로그램 충돌을 모니터링합니다." : "CrashLens will monitor application crashes from the notification area.", ToolTipIcon.Info);
+        tray.ShowBalloonTip(7000, NotificationText("CrashLens is running in the background.", "CrashLens가 백그라운드에서 실행 중입니다."), NotificationText("CrashLens will monitor application crashes from the notification area.", "알림 영역에서 프로그램 충돌을 모니터링합니다."), ToolTipIcon.Info);
+    }
+    static string NotificationText(string english, string korean)
+    {
+        var selectedLanguage = Registry.CurrentUser.OpenSubKey("Software\\CrashLens")?.GetValue("NotificationLanguage")?.ToString();
+        return selectedLanguage?.Equals("korean", StringComparison.OrdinalIgnoreCase) == true || (string.IsNullOrEmpty(selectedLanguage) && CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("ko", StringComparison.OrdinalIgnoreCase)) ? korean : english;
+    }
+    static void SetNotificationLanguage(string language) { using var key = Registry.CurrentUser.CreateSubKey("Software\\CrashLens"); key.SetValue("NotificationLanguage", language); }
+    static void ShowReleaseNotes()
+    {
+        using var key = Registry.CurrentUser.CreateSubKey("Software\\CrashLens");
+        var version = AppMetadata.DisplayVersion;
+        if (key.GetValue("LastStartedVersion")?.ToString() == version) return;
+        key.SetValue("LastStartedVersion", version);
+        if (Version.TryParse(version, out var current) && current > new Version(0, 1, 8)) MessageBox.Show("Release notes\r\n\r\n• Background startup notification\r\n• Periodic update reminders\r\n• Notification language setting", "CrashLens updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
     static Icon LoadIcon(int size)
     {
