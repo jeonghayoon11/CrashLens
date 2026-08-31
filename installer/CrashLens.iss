@@ -1,5 +1,5 @@
 #define AppName "CrashLens"
-#define AppVersion "0.1.7"
+#define AppVersion "0.1.8"
 #define AppPublisher "Jeong Hayoon"
 #define AppExeName "CrashLens.exe"
 
@@ -15,7 +15,7 @@ DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
 LicenseFile=LICENSE.txt
 OutputDir=..\artifacts\installer
-OutputBaseFilename=CrashLens-Setup-0.1.7
+OutputBaseFilename=CrashLens-Setup-0.1.8
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -26,6 +26,9 @@ CloseApplications=yes
 [Files]
 Source: "..\artifacts\CrashLens-release-final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\docs\images\crashlens.ico"; DestDir: "{app}"; DestName: "CrashLens-0.1.7.ico"; Flags: ignoreversion
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CrashLens"; ValueData: """{app}\{#AppExeName}"" --background"; Flags: uninsdeletevalue
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

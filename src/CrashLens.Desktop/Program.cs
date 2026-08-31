@@ -1,25 +1,29 @@
 using System.Diagnostics.Eventing.Reader;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Globalization;
 using CrashLens.Core;
 using CrashLens.Infrastructure;
 using CrashLens.Desktop;
 
-NativeShell.SetCurrentProcessExplicitAppUserModelID($"com.jhynx.CrashLens.{AppMetadata.DisplayVersion}");
+NativeShell.SetCurrentProcessExplicitAppUserModelID("CrashLens");
 ApplicationConfiguration.Initialize();
 var capture = Environment.GetCommandLineArgs().Contains("--capture", StringComparer.OrdinalIgnoreCase);
-var main = new CrashLensForm(capture);
+var background = Environment.GetCommandLineArgs().Contains("--background", StringComparer.OrdinalIgnoreCase);
+var main = new CrashLensForm(capture, background);
 if (capture) Application.Run(main);
-else { var context = new SplashContext(main); context.Start(); Application.Run(context); }
+else { var context = new SplashContext(main, background); context.Start(); Application.Run(context); }
 
 sealed class SplashContext : ApplicationContext
 {
     readonly Form main;
     readonly Form splash = new() { FormBorderStyle = FormBorderStyle.None, StartPosition = FormStartPosition.CenterScreen, ClientSize = new Size(440, 260), BackColor = Color.FromArgb(17, 24, 39), ShowInTaskbar = false };
-    public SplashContext(Form main) => this.main = main;
+    readonly bool startHidden;
+    public SplashContext(Form main, bool startHidden) { this.main = main; this.startHidden = startHidden; }
     protected override void OnMainFormClosed(object? sender, EventArgs e) => ExitThread();
     public void Start()
     {
+        if (startHidden) { MainForm = main; main.FormClosed += OnMainFormClosed; main.Show(); main.Hide(); return; }
         splash.Controls.Add(new Label { Text = "CRASHLENS", ForeColor = Color.White, Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true, Location = new Point(32, 36) });
         splash.Controls.Add(new Label { Text = "Windows crash analysis", ForeColor = Color.FromArgb(160, 190, 215), Font = new Font("Segoe UI", 10), AutoSize = true, Location = new Point(34, 104) });
         splash.Controls.Add(new Label { Text = $"Version {AppMetadata.DisplayVersion}", ForeColor = Color.FromArgb(130, 160, 190), Font = new Font("Segoe UI", 9), AutoSize = true, Location = new Point(34, 132) });
@@ -48,9 +52,10 @@ sealed class CrashLensForm : Form
     EventLogWatcher? watcher;
     enum BalloonAction { OpenWindow, InstallUpdate }
 
-    public CrashLensForm(bool capture)
+    readonly bool startInBackground;
+    public CrashLensForm(bool capture, bool startInBackground)
     {
-        this.capture = capture;
+        this.capture = capture; this.startInBackground = startInBackground;
         tray = new NotifyIcon { Icon = trayIcon, Text = "CrashLens is monitoring crashes", Visible = true };
         Text = "CrashLens - Windows Crash Analysis"; Icon = windowIcon; Width = 1280; Height = 780; BackColor = Color.FromArgb(30, 31, 34); ForeColor = Color.White;
         var tool = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, BackColor = Color.FromArgb(43, 45, 48), ForeColor = Color.White };
@@ -62,7 +67,7 @@ sealed class CrashLensForm : Form
         var menu = new ContextMenuStrip(); menu.Items.Add("Open CrashLens", null, (_, _) => OpenWindow()); menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesAsync(true)); menu.Items.Add("Exit", null, (_, _) => { tray.Visible = false; Application.Exit(); }); tray.ContextMenuStrip = menu; tray.BalloonTipClicked += async (_, _) => await HandleBalloonClickAsync(); tray.DoubleClick += (_, _) => OpenWindow();
         var help = new ToolStripDropDownButton("Help"); help.DropDownItems.Add("About CrashLens", null, (_, _) => ShowAbout()); tool.Items.Add(help);
         updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(false);
-        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); await CheckForUpdatesAsync(false, true); updateTimer.Start(); };
+        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); if (startInBackground) ShowBackgroundStartedNotification(); await CheckForUpdatesAsync(false, true); updateTimer.Start(); };
         FormClosing += (_, e) => { if (e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; Hide(); tray.ShowBalloonTip(2500, "CrashLens", "CrashLens is still monitoring application crashes.", ToolTipIcon.Info); } };
     }
 
@@ -93,6 +98,12 @@ sealed class CrashLensForm : Form
     }
 
     void OpenWindow() { Show(); WindowState = FormWindowState.Normal; Activate(); }
+    void ShowBackgroundStartedNotification()
+    {
+        var korean = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("ko", StringComparison.OrdinalIgnoreCase);
+        balloonAction = BalloonAction.OpenWindow;
+        tray.ShowBalloonTip(7000, korean ? "CrashLens가 백그라운드에서 실행 중입니다." : "CrashLens is running in the background.", korean ? "알림 영역에서 프로그램 충돌을 모니터링합니다." : "CrashLens will monitor application crashes from the notification area.", ToolTipIcon.Info);
+    }
     static Icon LoadIcon(int size)
     {
         var iconPath = Path.Combine(AppContext.BaseDirectory, "CrashLens.ico");
