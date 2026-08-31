@@ -2,6 +2,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Globalization;
+using Microsoft.Win32;
 using CrashLens.Core;
 using CrashLens.Infrastructure;
 using CrashLens.Desktop;
@@ -100,7 +101,8 @@ sealed class CrashLensForm : Form
     void OpenWindow() { Show(); WindowState = FormWindowState.Normal; Activate(); }
     void ShowBackgroundStartedNotification()
     {
-        var korean = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("ko", StringComparison.OrdinalIgnoreCase);
+        var selectedLanguage = Registry.CurrentUser.OpenSubKey("Software\\CrashLens")?.GetValue("NotificationLanguage")?.ToString();
+        var korean = selectedLanguage?.Equals("korean", StringComparison.OrdinalIgnoreCase) == true || (string.IsNullOrEmpty(selectedLanguage) && CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("ko", StringComparison.OrdinalIgnoreCase));
         balloonAction = BalloonAction.OpenWindow;
         tray.ShowBalloonTip(7000, korean ? "CrashLens가 백그라운드에서 실행 중입니다." : "CrashLens is running in the background.", korean ? "알림 영역에서 프로그램 충돌을 모니터링합니다." : "CrashLens will monitor application crashes from the notification area.", ToolTipIcon.Info);
     }

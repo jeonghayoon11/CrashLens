@@ -29,6 +29,7 @@ Source: "..\docs\images\crashlens.ico"; DestDir: "{app}"; DestName: "CrashLens-0
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CrashLens"; ValueData: """{app}\{#AppExeName}"" --background"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\CrashLens"; ValueType: string; ValueName: "NotificationLanguage"; ValueData: "{language}"; Flags: uninsdeletevalue
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
