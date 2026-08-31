@@ -11,6 +11,7 @@ NativeShell.SetCurrentProcessExplicitAppUserModelID("CrashLens");
 ApplicationConfiguration.Initialize();
 var capture = Environment.GetCommandLineArgs().Contains("--capture", StringComparer.OrdinalIgnoreCase);
 var background = Environment.GetCommandLineArgs().Contains("--background", StringComparer.OrdinalIgnoreCase);
+if (!capture) StartupRegistration.EnsureEnabled();
 var main = new CrashLensForm(capture, background);
 if (capture) Application.Run(main);
 else { var context = new SplashContext(main, background); context.Start(); Application.Run(context); }
@@ -48,6 +49,7 @@ sealed class CrashLensForm : Form
     readonly UpdateService updateService = new();
     readonly System.Windows.Forms.Timer updateTimer = new() { Interval = 6 * 60 * 60 * 1000 };
     ReleaseUpdate? availableUpdate;
+    CrashEvent? notificationCrash;
     BalloonAction balloonAction;
     bool checkingForUpdate;
     EventLogWatcher? watcher;
@@ -67,22 +69,23 @@ sealed class CrashLensForm : Form
         grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Time", DataPropertyName = nameof(CrashEvent.Time), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
         grid.DataSource = source; grid.SelectionChanged += (_, _) => ShowSelected();
         var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 390, BackColor = Color.FromArgb(63, 65, 69) }; split.Panel1.Controls.Add(grid); split.Panel2.Controls.Add(details); Controls.Add(split); Controls.Add(tool); tool.Dock = DockStyle.Top;
-        var menu = new ContextMenuStrip(); menu.Items.Add("Open CrashLens", null, (_, _) => OpenWindow()); menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesAsync(true)); menu.Items.Add("Exit", null, (_, _) => { tray.Visible = false; Application.Exit(); }); tray.ContextMenuStrip = menu; tray.BalloonTipClicked += async (_, _) => await HandleBalloonClickAsync(); tray.DoubleClick += (_, _) => OpenWindow();
+        var menu = new ContextMenuStrip(); menu.Items.Add("Open CrashLens", null, (_, _) => OpenWindow()); menu.Items.Add("Check for updates", null, async (_, _) => await CheckForUpdatesAsync(true)); menu.Items.Add("Exit", null, (_, _) => { tray.Visible = false; Application.Exit(); }); tray.ContextMenuStrip = menu; tray.BalloonTipClicked += async (_, _) => await HandleBalloonClickAsync(); tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) OpenWindow(); };
         var settings = new ToolStripDropDownButton("Settings"); settings.DropDownItems.Add("Notifications: Korean", null, (_, _) => SetNotificationLanguage("korean")); settings.DropDownItems.Add("Notifications: English", null, (_, _) => SetNotificationLanguage("english")); tool.Items.Add(settings);
         var help = new ToolStripDropDownButton("Help"); help.DropDownItems.Add("About CrashLens", null, (_, _) => ShowAbout()); tool.Items.Add(help);
         updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(false);
         Shown += async (_, _) =>
         {
             if (capture) { BeginInvoke(CaptureScreenshot); return; }
+            if (startInBackground)
+            {
+                // Give Explorer time to create the notification area after sign-in.
+                await Task.Delay(4000);
+                ShowBackgroundStartedNotification();
+            }
             await LoadEvents();
             StartMonitoring();
             ShowReleaseNotes();
-            if (startInBackground)
-            {
-                await Task.Delay(4000);
-                ShowBackgroundStartedNotification();
-                await Task.Delay(8000);
-            }
+            if (startInBackground) await Task.Delay(8000);
             await CheckForUpdatesAsync(false, !startInBackground);
             updateTimer.Start();
         };
@@ -114,6 +117,7 @@ sealed class CrashLensForm : Form
                 {
                     if (ShouldNotifyForEventRecord(recordId))
                     {
+                        notificationCrash = crash;
                         balloonAction = BalloonAction.OpenWindow;
                         tray.ShowBalloonTip(
                             8000,
@@ -128,7 +132,14 @@ sealed class CrashLensForm : Form
         watcher.Enabled = true;
     }
 
-    void OpenWindow() { Show(); WindowState = FormWindowState.Normal; Activate(); }
+    void OpenWindow()
+    {
+        Show();
+        WindowState = FormWindowState.Normal;
+        BringToFront();
+        Activate();
+        if (notificationCrash is not null) ShowCrashDetails(notificationCrash);
+    }
     void ShowBackgroundStartedNotification()
     {
         balloonAction = BalloonAction.OpenWindow;
@@ -210,7 +221,8 @@ sealed class CrashLensForm : Form
         catch { MessageBox.Show("The update could not be downloaded. Please try again later.", "CrashLens update", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
     static void ShowAbout() => MessageBox.Show($"CrashLens\r\nVersion {AppMetadata.DisplayVersion}\r\n\r\nWindows crash analysis utility\r\n\r\nDeveloper: Jeong Hayoon\r\nWebsite: https://jhynx.com\r\nGitHub: https://github.com/jeonghayoon11", "About CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    void ShowSelected() { if (grid.CurrentRow?.DataBoundItem is CrashEvent c) details.Text = $"APPLICATION\r\n{c.ApplicationName}\r\n{c.ExecutablePath}\r\n\r\nEXCEPTION\r\n{c.ExceptionDisplay}\r\n\r\nFAULTING MODULE\r\n{c.FaultingModule}\r\n\r\nRAW EVENT\r\n{c.RawMessage}\r\n\r\nXML\r\n{c.RawXml}"; }
+    void ShowSelected() { if (grid.CurrentRow?.DataBoundItem is CrashEvent c) ShowCrashDetails(c); }
+    void ShowCrashDetails(CrashEvent c) => details.Text = $"APPLICATION\r\n{c.ApplicationName}\r\n{c.ExecutablePath}\r\n\r\nEXCEPTION\r\n{c.ExceptionDisplay}\r\n\r\nFAULTING MODULE\r\n{c.FaultingModule}\r\n\r\nRAW EVENT\r\n{c.RawMessage}\r\n\r\nXML\r\n{c.RawXml}";
     async Task LoadEvents()
     {
         try
@@ -228,6 +240,27 @@ static class AppMetadata
 {
     public static Version Version => typeof(CrashLensForm).Assembly.GetName().Version ?? new Version(0, 1, 0);
     public static string DisplayVersion => Version.ToString(3);
+}
+
+static class StartupRegistration
+{
+    const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    const string ValueName = "CrashLens";
+
+    public static void EnsureEnabled()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
+            var command = $"\"{Application.ExecutablePath}\" --background";
+            if (!string.Equals(key.GetValue(ValueName)?.ToString(), command, StringComparison.Ordinal))
+                key.SetValue(ValueName, command, RegistryValueKind.String);
+        }
+        catch
+        {
+            // Monitoring still works when a managed device prevents startup registration.
+        }
+    }
 }
 
 static class NativeShell
