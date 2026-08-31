@@ -51,6 +51,8 @@ sealed class CrashLensForm : Form
     BalloonAction balloonAction;
     bool checkingForUpdate;
     EventLogWatcher? watcher;
+    readonly object notificationGate = new();
+    readonly HashSet<long> notifiedEventRecordIds = [];
     enum BalloonAction { OpenWindow, InstallUpdate }
 
     readonly bool startInBackground;
@@ -69,7 +71,21 @@ sealed class CrashLensForm : Form
         var settings = new ToolStripDropDownButton("Settings"); settings.DropDownItems.Add("Notifications: Korean", null, (_, _) => SetNotificationLanguage("korean")); settings.DropDownItems.Add("Notifications: English", null, (_, _) => SetNotificationLanguage("english")); tool.Items.Add(settings);
         var help = new ToolStripDropDownButton("Help"); help.DropDownItems.Add("About CrashLens", null, (_, _) => ShowAbout()); tool.Items.Add(help);
         updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(false);
-        Shown += async (_, _) => { if (capture) { BeginInvoke(CaptureScreenshot); return; } await LoadEvents(); StartMonitoring(); if (startInBackground) BeginInvoke(async () => { await Task.Delay(4000); ShowBackgroundStartedNotification(); }); ShowReleaseNotes(); await CheckForUpdatesAsync(false, !startInBackground); updateTimer.Start(); };
+        Shown += async (_, _) =>
+        {
+            if (capture) { BeginInvoke(CaptureScreenshot); return; }
+            await LoadEvents();
+            StartMonitoring();
+            ShowReleaseNotes();
+            if (startInBackground)
+            {
+                await Task.Delay(4000);
+                ShowBackgroundStartedNotification();
+                await Task.Delay(8000);
+            }
+            await CheckForUpdatesAsync(false, !startInBackground);
+            updateTimer.Start();
+        };
         FormClosing += (_, e) => { if (e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; Hide(); tray.ShowBalloonTip(2500, "CrashLens", NotificationText("CrashLens is still monitoring application crashes.", "CrashLens가 계속 프로그램 충돌을 모니터링합니다."), ToolTipIcon.Info); } };
     }
 
@@ -91,9 +107,22 @@ sealed class CrashLensForm : Form
             if (e.EventRecord is not { } record) return;
             using (record)
             {
+                var recordId = record.RecordId;
                 var crash = parser.Parse(record.Id, record.TimeCreated ?? DateTime.Now, record.FormatDescription() ?? "", record.ToXml());
                 if (crash is null) return;
-                BeginInvoke(() => { balloonAction = BalloonAction.OpenWindow; tray.ShowBalloonTip(8000, "Application crash detected", $"{crash.ApplicationName} stopped unexpectedly. Click to inspect the recorded event.", ToolTipIcon.Error); _ = LoadEvents(); });
+                BeginInvoke(() =>
+                {
+                    if (ShouldNotifyForEventRecord(recordId))
+                    {
+                        balloonAction = BalloonAction.OpenWindow;
+                        tray.ShowBalloonTip(
+                            8000,
+                            NotificationText("Application crash detected", "프로그램 충돌이 감지되었습니다"),
+                            NotificationText($"{crash.ApplicationName} stopped unexpectedly. Click to inspect the recorded event.", $"{crash.ApplicationName}이(가) 예기치 않게 종료되었습니다. 기록된 이벤트를 보려면 클릭하세요."),
+                            ToolTipIcon.Error);
+                    }
+                    _ = LoadEvents();
+                });
             }
         };
         watcher.Enabled = true;
@@ -102,9 +131,18 @@ sealed class CrashLensForm : Form
     void OpenWindow() { Show(); WindowState = FormWindowState.Normal; Activate(); }
     void ShowBackgroundStartedNotification()
     {
-        var selectedLanguage = Registry.CurrentUser.OpenSubKey("Software\\CrashLens")?.GetValue("NotificationLanguage")?.ToString();
         balloonAction = BalloonAction.OpenWindow;
         tray.ShowBalloonTip(7000, NotificationText("CrashLens is running in the background.", "CrashLens가 백그라운드에서 실행 중입니다."), NotificationText("CrashLens will monitor application crashes from the notification area.", "알림 영역에서 프로그램 충돌을 모니터링합니다."), ToolTipIcon.Info);
+    }
+    bool ShouldNotifyForEventRecord(long? recordId)
+    {
+        if (recordId is null) return true;
+        lock (notificationGate)
+        {
+            if (!notifiedEventRecordIds.Add(recordId.Value)) return false;
+            if (notifiedEventRecordIds.Count > 1024) notifiedEventRecordIds.Remove(notifiedEventRecordIds.Min());
+            return true;
+        }
     }
     static string NotificationText(string english, string korean)
     {
@@ -136,7 +174,11 @@ sealed class CrashLensForm : Form
             if (availableUpdate is not null)
             {
                 balloonAction = BalloonAction.InstallUpdate;
-                tray.ShowBalloonTip(10000, "CrashLens update available", $"Version {availableUpdate.Version} is ready. Click this notification to install it.", ToolTipIcon.Info);
+                tray.ShowBalloonTip(
+                    10000,
+                    NotificationText("CrashLens update available", "CrashLens 업데이트가 있습니다"),
+                    NotificationText($"Version {availableUpdate.Version} is ready. Click this notification to install it.", $"버전 {availableUpdate.Version}을(를) 설치할 수 있습니다. 이 알림을 클릭하여 업데이트하세요."),
+                    ToolTipIcon.Info);
                 if (showUpdatePopup && MessageBox.Show($"CrashLens {availableUpdate.Version} is available. Update now?", "CrashLens update", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes) await BeginUpdateAsync();
             }
             else if (showNoUpdateMessage) MessageBox.Show("CrashLens is up to date.", "CrashLens", MessageBoxButtons.OK, MessageBoxIcon.Information);

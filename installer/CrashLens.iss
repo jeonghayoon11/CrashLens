@@ -1,5 +1,5 @@
 #define AppName "CrashLens"
-#define AppVersion "0.1.9"
+#define AppVersion "0.1.10"
 #define AppPublisher "Jeong Hayoon"
 #define AppExeName "CrashLens.exe"
 
@@ -13,9 +13,9 @@ AppSupportURL=mailto:contact@jhynx.com
 ShowLanguageDialog=yes
 DefaultDirName={autopf}\CrashLens
 DefaultGroupName=CrashLens
-LicenseFile=LICENSE.txt
-OutputDir=..\artifacts\installer
-OutputBaseFilename=CrashLens-Setup-0.1.9
+LicenseFile=..\LICENSE
+OutputDir=..\artifacts\installer-0.1.10
+OutputBaseFilename=CrashLens-Setup-0.1.10
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -24,7 +24,7 @@ UninstallDisplayIcon={app}\{#AppExeName}
 CloseApplications=yes
 
 [Files]
-Source: "..\artifacts\CrashLens-release-final\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\artifacts\CrashLens-release-0.1.10\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\docs\images\crashlens.ico"; DestDir: "{app}"; DestName: "CrashLens-0.1.7.ico"; Flags: ignoreversion
 
 [Registry]
